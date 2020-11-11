@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:alpine
+    environment:
+    - POSTGRES_USER
+    - POSTGRES_PASSWORD
+    - POSTGRES_DB
+
+  redis:
+    image: redis:alpine
+    command:
+    - --loglevel warning
+    volumes:
+    - redis-volume:/data:Z
+
+  posthog:
+    image: posthog/posthog:latest
+    restart: always
+    ports:
+    - 8000:8000
+    depends_on:
+    - postgres
+    - redis
+    links:
+    - postgres
+    - redis
+    volumes:
+    - ${POSTGRES_VOLUME:-postgres-volume}:/var/lib/postgresql/data:Z
+    environment:
+    - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    - IS_DOCKER=true
+    - REDIS_URL=redis://redis:6379/
+    - SECRET_KEY
+
+volumes:
+  redis-volume:
+  postgres-volume:
+
